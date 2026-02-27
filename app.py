@@ -594,7 +594,7 @@ def calls_page():
                 ))
                 db.commit()
                 st.success(f"Call '{title}' created successfully")
-                st.experimental_rerun()
+                st.rerun()
             else:
                 st.warning("Title and Identifier are required")
     db.close()
