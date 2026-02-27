@@ -636,7 +636,6 @@ def proposals_page():
 
     db = SessionLocal()
 
-    # ================= SELECT CALL =================
     calls = db.query(Call).all()
 
     if not calls:
@@ -652,7 +651,7 @@ def proposals_page():
 
     selected_call = call_dict[selected_call_name]
 
-    # ================= SELECT AREA FROM CALL =================
+    # ---------------- SELECT AREA ----------------
     if selected_call.priority_areas:
         areas = [
             a.strip()
@@ -673,7 +672,7 @@ def proposals_page():
         selected_area = "All Areas"
         st.warning("No areas defined for this call")
 
-    # ================= FILTER PROPOSALS =================
+    # ---------------- FILTER PROPOSALS ----------------
     query = db.query(Proposal).filter(
         Proposal.call_id == selected_call.id
     )
@@ -689,47 +688,61 @@ def proposals_page():
 
     if not proposals:
         st.info("No proposals found for this area.")
-    else:
-        st.subheader("📌 Proposal List")
+        db.close()
+        return
 
-        for p in proposals:
-            st.markdown(f"""
-            <div class="modern-card">
-                <h3 style="margin-bottom:5px;">{p.title}</h3>
-                <p><strong>Area:</strong> {p.selected_area}</p>
-                <p><strong>Status:</strong> {p.status}</p>
-            </div>
-            """, unsafe_allow_html=True)
+    st.subheader("📌 Proposal List")
 
-            col1, col2 = st.columns([1, 1])
+    for p in proposals:
 
-            with col1:
-                if st.button("Open", key=f"open_{p.id}"):
-                    st.session_state.selected_proposal = p.id
+        st.markdown(f"""
+        <div class="modern-card">
+            <h3 style="margin-bottom:5px;">{p.title}</h3>
+            <p><strong>Area:</strong> {p.selected_area}</p>
+            <p><strong>Status:</strong> {p.status}</p>
+        </div>
+        """, unsafe_allow_html=True)
 
-            # ✅ ADMIN DELETE BUTTON
-            if st.session_state.role == "admin":
-                with col2:
-                    if st.button("🗑 Delete", key=f"delete_{p.id}"):
-                        delete_proposal(p.id)
-                        st.success("Proposal deleted successfully.")
-                        st.rerun()
+        col1, col2 = st.columns([1, 1])
 
-             # ---------------- DETAILS VIEW ----------------
-             if st.session_state.get("selected_proposal") == p.id:
-                 st.markdown("### Proposal Details")
-                 st.write(f"**Title:** {p.title}")
-                 st.write(f"**Abstract:** {p.abstract}")
-                 st.write(f"**Keywords:** {p.keywords}")
+        with col1:
+            if st.button("Open", key=f"open_{p.id}"):
+                st.session_state.selected_proposal = p.id
 
-                 st.download_button(
-                     "⬇ Download PDF",
-                     data=p.proposal_pdf,
-                     file_name=f"{p.title}.pdf",
-                     mime="application/pdf"
-                 )
+        # ---------------- ADMIN DELETE BUTTON ----------------
+        if st.session_state.role == "admin":
+            with col2:
+                if st.button("🗑 Delete", key=f"delete_{p.id}"):
+                    delete_proposal(p.id)
+                    st.success("Proposal deleted successfully.")
+                    st.rerun()
 
-                 st.divider()
+        # ---------------- DETAILS VIEW ----------------
+        if st.session_state.get("selected_proposal") == p.id:
+
+            st.markdown("### Proposal Details")
+
+            st.write(f"**Title:** {p.title}")
+            st.write(f"**Abstract:** {p.abstract}")
+            st.write(f"**Keywords:** {p.keywords}")
+            st.write(f"**Selected Area:** {p.selected_area}")
+            st.write(f"**Status:** {p.status}")
+            st.write(f"**Submitted By:** {p.submitted_by}")
+
+            st.text_area(
+                "Full Proposal Text",
+                p.proposal_text,
+                height=250
+            )
+
+            st.download_button(
+                "⬇ Download Proposal PDF",
+                data=p.proposal_pdf,
+                file_name=f"{p.title}.pdf",
+                mime="application/pdf"
+            )
+
+            st.divider()
 
     db.close()
 # ----------------- ASSIGNMENTS PAGE -----------------
