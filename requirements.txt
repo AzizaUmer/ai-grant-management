@@ -1,0 +1,10 @@
+streamlit
+sqlalchemy
+psycopg[binary]
+scikit-learn
+pandas
+sentence-transformers
+matplotlib
+pdfplumber
+torch
+reportlab
