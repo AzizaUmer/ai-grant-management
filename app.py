@@ -283,7 +283,9 @@ class Proposal(Base):
     call_id = Column(Integer, ForeignKey("calls.id"))
     status = Column(String, default="Under Review")
     submitted_by = Column(Integer)  # researcher id
-
+    __table_args__ = (
+        UniqueConstraint("title", "call_id", name="unique_proposal_per_call"),
+    )
 class ConflictOfInterest(Base):
     __tablename__ = "conflicts"
     id = Column(Integer, primary_key=True)
