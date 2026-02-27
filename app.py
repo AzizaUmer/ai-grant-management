@@ -615,6 +615,20 @@ def reviewers_page():
             st.download_button("Download CV PDF", data=r.cv_pdf, file_name=f"{r.name}.pdf", mime="application/pdf")
     db.close()
 
+def delete_proposal(proposal_id):
+    db = SessionLocal()
+    proposal = db.query(Proposal).filter(Proposal.id == proposal_id).first()
+
+    if proposal:
+        db.delete(proposal)
+
+        # Also delete related assignments and reviews (important for consistency)
+        db.query(Assignment).filter(Assignment.proposal_id == proposal_id).delete()
+        db.query(ReviewScore).filter(ReviewScore.proposal_id == proposal_id).delete()
+
+        db.commit()
+
+    db.close()
 # ----------------- PROPOSALS PAGE -----------------
 def proposals_page():
 
@@ -679,8 +693,6 @@ def proposals_page():
         st.subheader("📌 Proposal List")
 
         for p in proposals:
-
-            # ================= PROPOSAL CARD =================
             st.markdown(f"""
             <div class="modern-card">
                 <h3 style="margin-bottom:5px;">{p.title}</h3>
@@ -689,43 +701,35 @@ def proposals_page():
             </div>
             """, unsafe_allow_html=True)
 
-            col1, col2 = st.columns([1, 5])
+            col1, col2 = st.columns([1, 1])
 
             with col1:
-                if st.button("Open", key=f"prop_{p.id}"):
+                if st.button("Open", key=f"open_{p.id}"):
                     st.session_state.selected_proposal = p.id
 
-            # ================= DETAILS VIEW =================
-            if st.session_state.get("selected_proposal") == p.id:
+            # ✅ ADMIN DELETE BUTTON
+            if st.session_state.role == "admin":
+                with col2:
+                    if st.button("🗑 Delete", key=f"delete_{p.id}"):
+                        delete_proposal(p.id)
+                        st.success("Proposal deleted successfully.")
+                        st.rerun()
 
-                st.markdown("""
-                <div class="modern-card">
-                <h4>Proposal Details</h4>
-                """, unsafe_allow_html=True)
+             # ---------------- DETAILS VIEW ----------------
+             if st.session_state.get("selected_proposal") == p.id:
+                 st.markdown("### Proposal Details")
+                 st.write(f"**Title:** {p.title}")
+                 st.write(f"**Abstract:** {p.abstract}")
+                 st.write(f"**Keywords:** {p.keywords}")
 
-                st.write(f"**Title:** {p.title}")
-                st.write(f"**Abstract:** {p.abstract}")
-                st.write(f"**Keywords:** {p.keywords}")
-                st.write(f"**Selected Area:** {p.selected_area}")
-                st.write(f"**Status:** {p.status}")
-                st.write(f"**Submitted By (Researcher ID):** {p.submitted_by}")
+                 st.download_button(
+                     "⬇ Download PDF",
+                     data=p.proposal_pdf,
+                     file_name=f"{p.title}.pdf",
+                     mime="application/pdf"
+                 )
 
-                st.text_area(
-                    "Full Proposal Text",
-                    p.proposal_text,
-                    height=250
-                )
-
-                st.download_button(
-                    "⬇ Download Proposal PDF",
-                    data=p.proposal_pdf,
-                    file_name=f"{p.title}.pdf",
-                    mime="application/pdf"
-                )
-
-                st.markdown("</div>", unsafe_allow_html=True)
-
-                st.divider()
+                 st.divider()
 
     db.close()
 # ----------------- ASSIGNMENTS PAGE -----------------
