@@ -1035,8 +1035,6 @@ def researcher_register_page():
 
 def researcher_dashboard():
 
-    st.title("📘 Researcher Dashboard")
-
     col1, col2 = st.columns([1, 4])
 
     # ---------------- MENU ----------------
